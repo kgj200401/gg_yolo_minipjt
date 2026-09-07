@@ -1,0 +1,18 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Local SQLite database
+*.db
+
+# React/Vite generated files
+frontend/node_modules/
+frontend/dist/
+frontend/.npm-cache/
