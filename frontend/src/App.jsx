@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api } from "./api";
+import { updateTracker } from "./detectionTracker";
 
 const PRODUCT_EMOJI = {
   마늘: "🧄",
@@ -25,6 +26,27 @@ const RECIPE_EMOJI = {
 
 const formatPrice = (price) => `${price.toLocaleString("ko-KR")}원`;
 
+// Roboflow 클래스명을 DB 상품명으로 연결합니다.
+const MODEL_PRODUCT_NAMES = {
+  apple: "사과",
+  bread: "식빵",
+  carrot: "당근",
+  egg: "계란",
+  galic: "마늘", // 모델에 등록된 실제 철자
+  "large green onion": "대파",
+  l_onion: "대파",
+  onion: "양파",
+  raw_pork: "고기",
+  shrimp: "새우",
+  sliced_ham: "햄",
+  garlic: "마늘",
+  ham: "햄",
+  meat: "고기",
+  "green onion": "대파",
+  green_onion: "대파",
+  scallion: "대파",
+};
+
 function App() {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -39,6 +61,12 @@ function App() {
   const [recipeLoading, setRecipeLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState("");
+  const [detecting, setDetecting] = useState(false);
+  const [detections, setDetections] = useState(null);
+  const detectionBusy = useRef(false);
+  const tracks = useRef(new Map());
+  const cameraSession = useRef(0);
+  const productsLoaded = useRef(false);
 
   const showToast = useCallback((message) => {
     setToast(message);
@@ -47,6 +75,12 @@ function App() {
 
   const loadCart = useCallback(async () => {
     try {
+      if (!productsLoaded.current) {
+        const productData = await api.getProducts();
+        setProducts(productData);
+        setSelectedProduct((current) => current || productData[0]?.name || "");
+        productsLoaded.current = true;
+      }
       const data = await api.getCart();
       setCart(data.cart);
       setTotalPrice(data.total_price);
@@ -65,6 +99,7 @@ function App() {
           api.getCart(),
         ]);
         setProducts(productData);
+        productsLoaded.current = true;
         setSelectedProduct(productData[0]?.name || "");
         setCart(cartData.cart);
         setTotalPrice(cartData.total_price);
@@ -83,8 +118,81 @@ function App() {
     streamRef.current?.getTracks().forEach((track) => track.stop());
   }, []);
 
+  useEffect(() => {
+    if (cameraState !== "active" || purchaseResult) return;
+    let cancelled = false;
+    let timer;
+    const session = cameraSession.current;
+    const valid = () => !cancelled && session === cameraSession.current;
+    const controller = new AbortController();
+    async function scan() {
+      if (!valid()) return;
+      const video = videoRef.current;
+      if (document.hidden || !video?.videoWidth || video.readyState < 2 || detectionBusy.current) {
+        for (const track of tracks.current.values()) track.since = null;
+        timer = window.setTimeout(scan, 500);
+        return;
+      }
+      detectionBusy.current = true;
+      setDetecting(true);
+      let failed = false;
+      try {
+        const canvas = document.createElement("canvas");
+        const scale = Math.min(1, 960 / video.videoWidth);
+        canvas.width = Math.round(video.videoWidth * scale);
+        canvas.height = Math.round(video.videoHeight * scale);
+        canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+        const capturedAt = performance.now();
+        const result = await api.detect(canvas.toDataURL("image/jpeg", 0.85), controller.signal);
+        if (!valid() || document.hidden) return;
+        const grouped = new Map();
+        for (const item of result.predictions) {
+          const name = MODEL_PRODUCT_NAMES[item.class_name.trim().toLowerCase()] || item.class_name;
+          if (!grouped.has(name) || grouped.get(name).confidence < item.confidence) {
+            grouped.set(name, { ...item, name });
+          }
+        }
+        const rows = updateTracker(tracks.current, [...grouped.values()], capturedAt);
+        setDetections(rows);
+        for (const row of rows) {
+          if (!valid() || !row.ready || !products.some((product) => product.name === row.name)) continue;
+          // Lock before sending: a lost response must not trigger duplicate cart writes.
+          tracks.current.get(row.name).added = true;
+          const data = await api.addToCart(row.name);
+          if (!valid()) return;
+          setCart(data.cart);
+          setTotalPrice(data.total_price);
+          row.added = true;
+          showToast(`${row.name} 자동 추가 완료`);
+        }
+        if (valid()) setDetections([...rows]);
+      } catch (error) {
+        if (valid()) {
+          failed = true;
+          showToast(error.message);
+          stopCamera();
+        }
+      } finally {
+        detectionBusy.current = false;
+        if (valid()) {
+          setDetecting(false);
+          if (!failed) timer = window.setTimeout(scan, 500);
+        }
+      }
+    }
+    scan();
+    return () => {
+      cancelled = true;
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [cameraState, purchaseResult, products, showToast]);
+
   async function startCamera() {
     try {
+      cameraSession.current += 1;
+      tracks.current.clear();
+      setDetections(null);
       setCameraState("starting");
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" } },
@@ -100,6 +208,9 @@ function App() {
   }
 
   function stopCamera() {
+    cameraSession.current += 1;
+    setDetecting(false);
+    setDetections(null);
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
     if (videoRef.current) videoRef.current.srcObject = null;
@@ -132,6 +243,7 @@ function App() {
   }
 
   async function handlePurchase() {
+    stopCamera();
     try {
       setLoading(true);
       setPurchaseResult(await api.purchase());
@@ -198,6 +310,8 @@ function App() {
               setSelectedProduct={setSelectedProduct}
               onTestDetection={() => addProduct(selectedProduct)}
               loading={loading}
+              detecting={detecting}
+              detections={detections}
             />
             <CartPanel
               cart={cart}
@@ -254,6 +368,8 @@ function CameraPanel({
   setSelectedProduct,
   onTestDetection,
   loading,
+  detecting,
+  detections,
 }) {
   const cameraActive = cameraState === "active";
 
@@ -264,7 +380,7 @@ function CameraPanel({
           <span className="eyebrow">LIVE DETECTION</span>
           <h2>상품 인식</h2>
         </div>
-        <span className="mode-badge">YOLO 연결 예정</span>
+        <span className="mode-badge">모델 인식</span>
       </div>
 
       <div className={`camera-stage ${cameraActive ? "is-active" : ""}`}>
@@ -275,7 +391,7 @@ function CameraPanel({
             <strong>
               {cameraState === "starting" ? "카메라를 준비하고 있습니다" : "상품을 카메라에 보여주세요"}
             </strong>
-            <p>카메라 영상에서 상품을 자동으로 인식합니다.</p>
+            <p>70% 이상으로 1초간 인식되면 자동으로 담깁니다.</p>
             <button className="camera-button" onClick={onStart} disabled={cameraState === "starting"}>
               {cameraState === "starting" ? "연결 중..." : "카메라 시작"}
             </button>
@@ -284,7 +400,7 @@ function CameraPanel({
         {cameraActive && (
           <>
             <div className="scan-line" />
-            <div className="live-chip"><i /> 인식 대기 중</div>
+            <div className="live-chip"><i /> {detecting ? "상품 확인 중" : "자동 인식 중"}</div>
             <button className="stop-camera" onClick={onStop}>카메라 끄기</button>
           </>
         )}
@@ -294,8 +410,26 @@ function CameraPanel({
         <span className="corner bottom-right" />
       </div>
 
+      <p>70% 이상으로 1초 이상 확인된 상품을 자동으로 담습니다. 같은 상품은 화면에서 사라진 것이 확인된 뒤 다시 보여주세요.</p>
+      <p>카메라가 켜져 있는 동안 사진을 인식 서버로 주기적으로 전송합니다.</p>
+      {detections !== null && (
+        <div aria-live="polite">
+          {detections.length === 0 && <p>탐지된 상품이 없습니다. 상품을 더 가까이 보여주세요.</p>}
+          {detections.map((detection, index) => {
+            const name = detection.name;
+            const known = products.some((product) => product.name === name);
+            return (
+              <div className="test-controls" key={index}>
+                <span>{name} · {(detection.confidence * 100).toFixed(0)}%</span>
+                {known ? <span>{detection.added ? "담기 완료 · 상품을 화면에서 치워주세요" : detection.confidence < 0.7 ? "70% 이상 인식 대기" : `확인 중 ${Math.min(detection.seconds, 1).toFixed(1)} / 1초`}</span> : <span>{products.length === 0 ? "서버 상품 목록을 불러오는 중입니다" : `상품명 연결 필요 (${detection.class_name})`}</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <details className="developer-test">
-        <summary>YOLO 연결 전 인식 테스트</summary>
+        <summary>개발용 상품 추가</summary>
         <div className="test-controls">
           <select value={selectedProduct} onChange={(event) => setSelectedProduct(event.target.value)}>
             {products.map((product) => (
@@ -330,7 +464,7 @@ function CartPanel({ cart, totalPrice, totalQuantity, onAdd, onRemove, onPurchas
           <div className="empty-cart">
             <div className="empty-icon">🛒</div>
             <strong>장바구니가 비어 있어요</strong>
-            <p>카메라에 상품을 보여주면<br />자동으로 장바구니에 담겨요.</p>
+            <p>상품을 카메라에 보여주세요.<br />70% 이상으로 1초간 확인되면 자동으로 담겨요.</p>
           </div>
         ) : (
           cart.map((item) => (

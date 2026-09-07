@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from database import Base, SessionLocal, engine, get_db
 from models import CartItem, Product, Recipe, RecipeIngredient, RecipeStep
+from detection import router as detection_router
 
 
 # DB가 비어 있을 때 자동으로 등록할 기본 상품입니다.
@@ -204,6 +205,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+app.include_router(detection_router)
 
 # React 개발 서버에서 FastAPI를 호출할 수 있도록 허용합니다.
 app.add_middleware(

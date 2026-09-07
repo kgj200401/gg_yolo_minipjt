@@ -8,6 +8,20 @@ wheels/
 
 # Virtual environments
 .venv
+.venv-train/
+.yolo-config/
+Ultralytics/
+.uv-cache/
+dataset/
+dataset_augmented/
+augmentation-run.log
+runs/
+training-run.log
+evaluation-run.log
+*.pt
+.env
+.env.*
+!.env.example
 
 # Local SQLite database
 *.db

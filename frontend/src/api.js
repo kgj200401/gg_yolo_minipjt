@@ -15,6 +15,11 @@ async function request(path, options = {}) {
 }
 
 export const api = {
+  detect: (image, signal) => request("/detect", {
+    method: "POST",
+    body: JSON.stringify({ image }),
+    signal,
+  }),
   checkServer: () => request("/"),
   getProducts: () => request("/products"),
   getCart: () => request("/cart"),
