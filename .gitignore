@@ -14,6 +14,8 @@ Ultralytics/
 .uv-cache/
 dataset/
 dataset_augmented/
+dataset_corrected_v*/
+dataset_corrected_augmented_v*/
 augmentation-run.log
 runs/
 training-run.log

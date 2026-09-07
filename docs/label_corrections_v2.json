@@ -1,0 +1,49 @@
+{
+  "scope": "Additional manually reviewed training labels. Validation remains identical to v1.",
+  "edits": [
+    {
+      "split": "train",
+      "stem": "31f979235712cba7802420ec7a19b6f2_jpg.rf.GX50FNBv0xY4KwMdkOQF",
+      "class_id": 3,
+      "size": [736, 736],
+      "reason": "Relabel visible egg cartons as sale units, including omitted cartons on all three shelves; do not label eggs inside cartons separately. Boxes cover visible package extent; fully occluded objects are not inferred.",
+      "boxes": [
+        [184,45,278,112], [184,101,279,161], [181,151,276,207],
+        [269,97,356,161], [268,151,356,207],
+        [351,47,525,115], [351,104,530,165], [350,157,532,208],
+        [513,76,679,123], [523,108,696,168], [527,157,706,210],
+        [0,146,190,208],
+        [126,271,273,304], [267,269,405,304], [408,269,552,304],
+        [117,296,285,337], [269,297,423,339], [421,298,573,339],
+        [99,323,261,366], [260,325,424,368], [413,326,585,369],
+        [83,354,260,409], [270,356,424,405], [427,356,605,410],
+        [62,393,237,451], [243,393,420,445], [418,393,591,447], [584,389,724,451],
+        [109,491,291,528], [290,491,469,528], [462,491,638,528],
+        [117,522,299,565], [293,522,472,565], [471,522,644,564],
+        [99,559,285,607], [277,558,458,606], [457,558,634,607],
+        [105,598,298,649], [288,596,476,648], [472,596,657,647],
+        [82,638,277,695], [268,638,463,693], [462,638,643,692]
+      ]
+    },
+    {
+      "split": "train",
+      "stem": "apple_006_jpg.rf.AONLOUetvbczCH0LX6HM",
+      "class_id": 0,
+      "size": [213, 320],
+      "action": "append",
+      "reason": "Keep 20 existing apple boxes and add 12 identifiable boundary-truncated apples. Use visible extent only. Tiny ambiguous background fragments are left for further review rather than guessed.",
+      "boxes": [
+        [0,0,35,39], [61,0,117,37], [111,0,170,31], [174,0,213,31],
+        [0,35,23,83], [201,17,213,47],
+        [193,80,213,125], [181,118,213,166],
+        [0,143,37,195], [0,211,35,270],
+        [48,291,117,320], [123,305,185,320]
+      ]
+    }
+  ],
+  "deferred": [
+    {"stem": "large green onion_001_jpg.rf.FxBWwk8gwGE64HzNd4qg", "reason": "Overlapping tied bundles: several boundaries and visible roots cannot be reliably associated at 240x320 resolution."},
+    {"stem": "large green onion_017_jpg.rf.l9bNJLygiQ3C08MSJ3sN", "reason": "Dense overlapping bundles; do not merge all green onions into one sale unit."},
+    {"stem": "apple_080_jpg.rf.Auq3EyA7DNoiUVtyFfDn", "reason": "Mixture of whole apples and cut halves, with heavy overlap; sale-unit interpretation of cut portions remains ambiguous."}
+  ]
+}

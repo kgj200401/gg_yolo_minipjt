@@ -2,14 +2,14 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { updateTracker } from "./detectionTracker.js";
 
-const prediction = (confidence = 0.7) => [{ name: "사과", confidence }];
+const prediction = (confidence = 0.65) => [{ name: "사과", confidence }];
 
 test("requires one second and resets on low confidence", () => {
   const tracks = new Map();
   assert.equal(updateTracker(tracks, prediction(), 0)[0].ready, false);
   assert.equal(updateTracker(tracks, prediction(), 999)[0].ready, false);
   assert.equal(updateTracker(tracks, prediction(), 1000)[0].ready, true);
-  updateTracker(tracks, prediction(0.69), 2100);
+  updateTracker(tracks, prediction(0.6499), 2100);
   assert.equal(updateTracker(tracks, prediction(), 3000)[0].ready, false);
   assert.equal(updateTracker(tracks, prediction(), 3999)[0].ready, false);
   assert.equal(updateTracker(tracks, prediction(), 4000)[0].ready, true);

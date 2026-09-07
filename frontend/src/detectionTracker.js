@@ -1,4 +1,5 @@
 // Time is measured at frame capture, not when a slow API response arrives.
+export const AUTO_ADD_CONFIDENCE = 0.65;
 export function updateTracker(tracks, predictions, now) {
   const visible = new Set(predictions.map((item) => item.name));
   for (const name of tracks.keys()) {
@@ -14,7 +15,7 @@ export function updateTracker(tracks, predictions, now) {
     }
     if (now - track.last > 4000) track.since = null;
     track.last = now;
-    if (item.confidence >= 0.7) track.since ??= now;
+    if (item.confidence >= AUTO_ADD_CONFIDENCE) track.since ??= now;
     else track.since = null;
     const seconds = track.since === null ? 0 : (now - track.since) / 1000;
     return { ...item, seconds, added: track.added, ready: !track.added && seconds >= 1 };

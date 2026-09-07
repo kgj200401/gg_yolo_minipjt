@@ -1,13 +1,18 @@
 """Add clockwise 90-degree training copies, preserving original split membership."""
 from pathlib import Path
+import argparse
 from PIL import Image
 import yaml
 
 
 def main():
     root = Path(__file__).resolve().parent
-    source = root / "dataset"
-    output = root / "dataset_augmented"
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--source', type=Path, default=root / 'dataset')
+    parser.add_argument('--output', type=Path, default=root / 'dataset_augmented')
+    args = parser.parse_args()
+    source = args.source.resolve()
+    output = args.output.resolve()
     if output.exists():
         raise SystemExit("Output exists; refusing to overwrite")
     images = sorted((source / "train/images").iterdir())
