@@ -6,7 +6,7 @@ import yaml
 
 
 def main():
-    root = Path(__file__).resolve().parent
+    root = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser()
     parser.add_argument('--source', type=Path, default=root / 'dataset')
     parser.add_argument('--output', type=Path, default=root / 'dataset_augmented')

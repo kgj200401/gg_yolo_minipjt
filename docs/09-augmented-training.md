@@ -9,14 +9,14 @@
 - YOLOv8n 사전학습 가중치에서 새로 시작하며 이전 best.pt/optimizer는 사용하지 않음
 - 최대 150에포크, batch 16, AdamW lr0=0.001, cosine LR, patience 25
 
-데이터 생성: `prepare_augmentation.py`
+데이터 생성: `experiments/prepare_augmentation.py`
 
-학습 및 자동 평가: `run_augmented_training.py`
+학습 및 자동 평가: `experiments/run_augmented_training.py`
 
 진행 로그:
 
 ```powershell
-Get-Content augmentation-run.log -Tail 10 -Wait
+Get-Content runs/logs/augmentation-run.log -Tail 10 -Wait
 ```
 
 결과 모델: `runs/detect/ozm_augmented/weights/best.pt`

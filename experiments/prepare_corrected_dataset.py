@@ -9,7 +9,7 @@ from pathlib import Path
 import yaml
 from PIL import Image, ImageDraw
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / 'dataset'
 OUTPUT = ROOT / 'dataset_corrected_v1'
 REVIEW = ROOT / 'runs/sale_unit_review'

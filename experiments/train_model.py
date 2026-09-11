@@ -1,11 +1,11 @@
-"""Run with: uv run --with ultralytics train_model.py --help"""
+"""Run with: uv run --with ultralytics experiments/train_model.py --help"""
 import argparse
 import os
 from pathlib import Path
 
 
 def main():
-    root = Path(__file__).resolve().parent
+    root = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser(description="Train a YOLO model on the OZM dataset")
     parser.add_argument("--data", type=Path, default=root / "dataset/data.yaml")
     parser.add_argument("--model", default="yolov8n.pt")
@@ -13,6 +13,7 @@ def main():
     parser.add_argument("--batch", type=int, default=8)
     parser.add_argument("--imgsz", type=int, default=640)
     parser.add_argument("--lr0", type=float, default=0.001)
+    parser.add_argument("--cls", type=float, default=0.5, help="Classification loss weight")
     parser.add_argument("--optimizer", default="AdamW")
     parser.add_argument("--patience", type=int, default=20)
     parser.add_argument("--workers", type=int, default=2)
@@ -25,8 +26,8 @@ def main():
     args = parser.parse_args()
     if not args.data.is_file():
         parser.error(f"Dataset configuration not found: {args.data}")
-    if min(args.epochs, args.batch, args.imgsz) <= 0 or args.lr0 <= 0:
-        parser.error("epochs, batch, imgsz and lr0 must be positive")
+    if min(args.epochs, args.batch, args.imgsz) <= 0 or args.lr0 <= 0 or not 0 < args.cls < float("inf"):
+        parser.error("epochs, batch, imgsz, lr0 and cls must be positive and cls finite")
 
     os.environ.setdefault("YOLO_CONFIG_DIR", str(root / ".yolo-config"))
     Path(os.environ["YOLO_CONFIG_DIR"]).mkdir(parents=True, exist_ok=True)
@@ -40,6 +41,7 @@ def main():
         imgsz=args.imgsz,
         optimizer=args.optimizer,
         lr0=args.lr0,
+        cls=args.cls,
         patience=args.patience,
         device=args.device,
         project=str(root / "runs/detect"),

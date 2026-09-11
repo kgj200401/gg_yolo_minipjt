@@ -1,5 +1,11 @@
 // Time is measured at frame capture, not when a slow API response arrives.
-export const AUTO_ADD_CONFIDENCE = 0.65;
+import policy from "./confidencePolicy.json" with { type: "json" };
+export const AUTO_ADD_CONFIDENCE = policy.default;
+const CLASS_NAMES = { 사과: "apple", 마늘: "galic", 대파: "l_onion", 새우: "shrimp" };
+export function getConfidenceThreshold(item) {
+  const modelClass = item.class_name?.trim().toLowerCase();
+  return policy.classes[modelClass] ?? policy.classes[CLASS_NAMES[item.name]] ?? policy.default;
+}
 export function updateTracker(tracks, predictions, now) {
   const visible = new Set(predictions.map((item) => item.name));
   for (const name of tracks.keys()) {
@@ -15,9 +21,10 @@ export function updateTracker(tracks, predictions, now) {
     }
     if (now - track.last > 4000) track.since = null;
     track.last = now;
-    if (item.confidence >= AUTO_ADD_CONFIDENCE) track.since ??= now;
+    const threshold = getConfidenceThreshold(item);
+    if (item.confidence >= threshold) track.since ??= now;
     else track.since = null;
     const seconds = track.since === null ? 0 : (now - track.since) / 1000;
-    return { ...item, seconds, added: track.added, ready: !track.added && seconds >= 1 };
+    return { ...item, threshold, seconds, added: track.added, ready: !track.added && seconds >= 1 };
   });
 }

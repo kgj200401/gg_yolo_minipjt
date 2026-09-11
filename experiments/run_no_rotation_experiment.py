@@ -6,7 +6,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 DOC = ROOT / "docs/파인튜닝 진행.md"
 RUN = ROOT / "runs/detect/ozm_no_rotation"
 OUTPUT = ROOT / "runs/validation_no_rotation"
@@ -38,14 +38,14 @@ def main():
     started = datetime.now().isoformat(timespec="seconds")
     update_document(f"상태: 학습 진행 중. 시작 시각(PC 현지 시간): {started}\n\n앱 모델과 신뢰도 설정은 유지한다.")
     try:
-        subprocess.run([sys.executable, "-u", "train_model.py", "--data", "dataset/data.yaml",
+        subprocess.run([sys.executable, "-u", "experiments/train_model.py", "--data", "dataset/data.yaml",
                         "--model", "yolov8n.pt", "--device", "0", "--epochs", "150",
                         "--batch", "16", "--lr0", "0.001", "--optimizer", "AdamW",
                         "--patience", "25", "--workers", "2", "--cos-lr", "--degrees", "15",
                         "--shear", "10", "--fliplr", "0.5", "--name", "ozm_no_rotation"],
                        cwd=ROOT, check=True)
         update_document(f"상태: 학습 완료, 검증 데이터 평가 중. 시작 시각: {started}")
-        subprocess.run([sys.executable, "-u", "evaluate_thresholds.py", "--model",
+        subprocess.run([sys.executable, "-u", "experiments/evaluate_thresholds.py", "--model",
                         str(RUN / "weights/best.pt"), "--output", str(OUTPUT)], cwd=ROOT, check=True)
         current = json.loads((OUTPUT / "report.json").read_text(encoding="utf-8"))
         assert current["split"] == baseline["split"] == "val"
@@ -90,7 +90,7 @@ def main():
         update_document(result)
         print("Experiment B complete; progress document updated.", flush=True)
     except Exception as exc:
-        update_document(f"상태: 학습 또는 평가 실패 ({type(exc).__name__}). 로그 `runs/no_rotation_training.log`를 확인한다.\n시작: {started}")
+        update_document(f"상태: 학습 또는 평가 실패 ({type(exc).__name__}). 로그 `runs/logs/no_rotation_training.log`를 확인한다.\n시작: {started}")
         raise
 
 

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api } from "./api";
-import { AUTO_ADD_CONFIDENCE, updateTracker } from "./detectionTracker";
+import { getConfidenceThreshold, updateTracker } from "./detectionTracker";
 
-const AUTO_ADD_PERCENT = Math.round(AUTO_ADD_CONFIDENCE * 100);
+const AUTO_ADD_GUIDE = "사과 50% · 마늘·대파·새우 60% · 나머지 65%";
 
 const PRODUCT_EMOJI = {
   마늘: "🧄",
@@ -393,7 +393,7 @@ function CameraPanel({
             <strong>
               {cameraState === "starting" ? "카메라를 준비하고 있습니다" : "상품을 카메라에 보여주세요"}
             </strong>
-            <p>{AUTO_ADD_PERCENT}% 이상으로 1초간 인식되면 자동으로 담깁니다.</p>
+            <p>상품별 기준 이상으로 1초간 인식되면 자동으로 담깁니다. {AUTO_ADD_GUIDE}</p>
             <button className="camera-button" onClick={onStart} disabled={cameraState === "starting"}>
               {cameraState === "starting" ? "연결 중..." : "카메라 시작"}
             </button>
@@ -412,7 +412,7 @@ function CameraPanel({
         <span className="corner bottom-right" />
       </div>
 
-      <p>{AUTO_ADD_PERCENT}% 이상으로 1초 이상 확인된 상품을 자동으로 담습니다. 같은 상품은 화면에서 사라진 것이 확인된 뒤 다시 보여주세요.</p>
+      <p>{AUTO_ADD_GUIDE} 이상으로 1초 이상 확인된 상품을 자동으로 담습니다. 같은 상품은 화면에서 사라진 것이 확인된 뒤 다시 보여주세요.</p>
       <p>카메라가 켜져 있는 동안 사진을 인식 서버로 주기적으로 전송합니다.</p>
       {detections !== null && (
         <div aria-live="polite">
@@ -423,7 +423,7 @@ function CameraPanel({
             return (
               <div className="test-controls" key={index}>
                 <span>{name} · {(detection.confidence * 100).toFixed(0)}%</span>
-                {known ? <span>{detection.added ? "담기 완료 · 상품을 화면에서 치워주세요" : detection.confidence < AUTO_ADD_CONFIDENCE ? `${AUTO_ADD_PERCENT}% 이상 인식 대기` : `확인 중 ${Math.min(detection.seconds, 1).toFixed(1)} / 1초`}</span> : <span>{products.length === 0 ? "서버 상품 목록을 불러오는 중입니다" : `상품명 연결 필요 (${detection.class_name})`}</span>}
+                {known ? <span>{detection.added ? "담기 완료 · 상품을 화면에서 치워주세요" : detection.confidence < getConfidenceThreshold(detection) ? `${Math.round(getConfidenceThreshold(detection) * 100)}% 이상 인식 대기` : `확인 중 ${Math.min(detection.seconds, 1).toFixed(1)} / 1초`}</span> : <span>{products.length === 0 ? "서버 상품 목록을 불러오는 중입니다" : `상품명 연결 필요 (${detection.class_name})`}</span>}
               </div>
             );
           })}
@@ -466,7 +466,7 @@ function CartPanel({ cart, totalPrice, totalQuantity, onAdd, onRemove, onPurchas
           <div className="empty-cart">
             <div className="empty-icon">🛒</div>
             <strong>장바구니가 비어 있어요</strong>
-            <p>상품을 카메라에 보여주세요.<br />{AUTO_ADD_PERCENT}% 이상으로 1초간 확인되면 자동으로 담겨요.</p>
+            <p>상품을 카메라에 보여주세요.<br />상품별 기준 이상으로 1초간 확인되면 자동으로 담겨요.</p>
           </div>
         ) : (
           cart.map((item) => (

@@ -10,7 +10,7 @@ ZIP 안의 동일한 `data.yaml` 중복 항목은 하나로 정리했고,
 프로젝트 폴더의 PowerShell에서 실행합니다.
 
 ```powershell
-.\.venv-train\Scripts\python.exe train_model.py --epochs 100 --batch 8 --lr0 0.001 --device 0
+.\.venv-train\Scripts\python.exe experiments/train_model.py --epochs 100 --batch 8 --lr0 0.001 --device 0
 ```
 
 GPU 학습 환경은 `.venv-train`에 설치합니다. 기존 백엔드는 `.venv`를 사용합니다.
@@ -28,7 +28,7 @@ uv pip install --python .venv-train/Scripts/python.exe -r requirements-training.
 1에포크 시험 학습:
 
 ```powershell
-.\.venv-train\Scripts\python.exe train_model.py --device 0 --epochs 1 --batch 8 --name gpu_smoke
+.\.venv-train\Scripts\python.exe experiments/train_model.py --device 0 --epochs 1 --batch 8 --name gpu_smoke
 ```
 
 설정 예시이며 최적 파라미터를 의미하지 않습니다.
@@ -36,17 +36,17 @@ uv pip install --python .venv-train/Scripts/python.exe -r requirements-training.
 ## 본 학습 설정
 
 ```powershell
-.\.venv-train\Scripts\python.exe train_model.py --device 0 --epochs 150 --batch 16 --lr0 0.001 --optimizer AdamW --patience 25 --workers 2 --cos-lr --name ozm_baseline
+.\.venv-train\Scripts\python.exe experiments/train_model.py --device 0 --epochs 150 --batch 16 --lr0 0.001 --optimizer AdamW --patience 25 --workers 2 --cos-lr --name ozm_baseline
 ```
 
 YOLOv8n, 이미지 크기 640, AdamW, 초기 학습률 0.001을 사용합니다.
 코사인 학습률 감소를 적용하고 검증 성능이 25에포크 동안 개선되지 않으면
 조기 종료합니다. 최적 설정을 입증한 것은 아니며 첫 본 학습의 기준 설정입니다.
 결과는 `runs/detect/ozm_baseline`에 저장됩니다(기존 폴더가 있으면 번호 추가).
-현재 실행 로그는 프로젝트 루트 `training-run.log`에서 확인할 수 있습니다.
+현재 실행 로그는 프로젝트 루트 `runs/logs/training-run.log`에서 확인할 수 있습니다.
 
 ```powershell
-Get-Content training-run.log -Tail 20 -Wait
+Get-Content runs/logs/training-run.log -Tail 20 -Wait
 ```
 
 | 옵션 | 의미 | 기본값 |

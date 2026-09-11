@@ -4,7 +4,7 @@ import argparse
 import os
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 os.environ.setdefault("YOLO_CONFIG_DIR", str(ROOT / ".yolo-config"))
 import numpy as np
 from ultralytics import YOLO

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import yaml
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 RUN = ROOT / 'runs/detect/ozm_corrected_v2'
 OUTPUT = ROOT / 'runs/validation_corrected_v2'
 REFERENCE = ROOT / 'runs/reference_corrected_v2'
@@ -26,7 +26,7 @@ def update(text):
 
 
 def evaluate(model, output):
-    subprocess.run([sys.executable, '-u', 'evaluate_thresholds.py', '--model', str(model),
+    subprocess.run([sys.executable, '-u', 'experiments/evaluate_thresholds.py', '--model', str(model),
                     '--data', str(DATA), '--output', str(output)], cwd=ROOT, check=True)
     return json.loads((output/'report.json').read_text(encoding='utf-8'))
 
@@ -47,7 +47,7 @@ def main():
         update(f'상태: 기존 A 모델을 동일한 v2 검증 데이터로 재평가 중. 시작: {started}')
         baseline = evaluate(ROOT/'runs/detect/ozm_augmented/weights/best.pt', REFERENCE)
         update(f'상태: 학습 진행 중. 시작: {started}\n\n학습 후 신뢰도 60%에서 기존 A와 비교한다.')
-        subprocess.run([sys.executable, '-u', 'train_model.py', '--data', 'dataset_corrected_augmented_v2/data.yaml',
+        subprocess.run([sys.executable, '-u', 'experiments/train_model.py', '--data', 'dataset_corrected_augmented_v2/data.yaml',
                         '--model', 'yolov8n.pt', '--device', '0', '--epochs', '150', '--batch', '16',
                         '--lr0', '0.001', '--optimizer', 'AdamW', '--patience', '25', '--workers', '2',
                         '--cos-lr', '--degrees', '15', '--shear', '10', '--fliplr', '0.5',
@@ -92,7 +92,7 @@ def main():
         update(text)
         print('Experiment D complete; progress document updated.', flush=True)
     except Exception as exc:
-        update(f'상태: 학습 또는 평가 실패 ({type(exc).__name__}).\n로그: runs/corrected_v2_training.log 및 runs/corrected_v2_training.err.log')
+        update(f'상태: 학습 또는 평가 실패 ({type(exc).__name__}).\n로그: runs/logs/corrected_v2_training.log 및 runs/logs/corrected_v2_training.err.log')
         raise
 
 

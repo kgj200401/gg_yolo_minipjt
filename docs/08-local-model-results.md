@@ -59,7 +59,7 @@ API 키 없이 로컬로 추론합니다. CPU 실행은 `YOLO_DEVICE=cpu` 환경
 ## 재평가
 
 ```powershell
-.\.venv-train\Scripts\python.exe evaluate_model.py
+.\.venv-train\Scripts\python.exe experiments/evaluate_model.py
 ```
 
 원시 결과: `runs/evaluation/report.json`

@@ -6,18 +6,18 @@ from pathlib import Path
 
 
 def main():
-    root = Path(__file__).resolve().parent
+    root = Path(__file__).resolve().parents[1]
     run = root / "runs/detect/ozm_augmented"
     if run.exists():
         raise SystemExit("ozm_augmented already exists; choose a new experiment name")
-    subprocess.run([sys.executable, "train_model.py", "--data", "dataset_augmented/data.yaml",
+    subprocess.run([sys.executable, "experiments/train_model.py", "--data", "dataset_augmented/data.yaml",
                     "--model", "yolov8n.pt", "--device", "0", "--epochs", "150",
                     "--batch", "16", "--lr0", "0.001", "--optimizer", "AdamW",
                     "--patience", "25", "--workers", "2", "--cos-lr",
                     "--degrees", "15", "--shear", "10", "--fliplr", "0.5",
                     "--name", "ozm_augmented"], cwd=root, check=True)
     output = root / "runs/evaluation_augmented"
-    subprocess.run([sys.executable, "evaluate_model.py", "--model", str(run / "weights/best.pt"),
+    subprocess.run([sys.executable, "experiments/evaluate_model.py", "--model", str(run / "weights/best.pt"),
                     "--output", str(output)], cwd=root, check=True)
     old = json.loads((root / "runs/evaluation/report.json").read_text(encoding="utf-8"))
     new = json.loads((output / "report.json").read_text(encoding="utf-8"))
